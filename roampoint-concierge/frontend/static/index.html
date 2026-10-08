@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Assistant</title>
+<!-- Optional: used only to draw A2UI Icon components. If it can't load (offline/
+     corp network), icons fall back to showing their name as text. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+<!-- Markdown Parser for rich readable text output -->
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+<style>
+  :root {
+    --accent: #0d9488;
+    --accent-dark: #0f766e;
+    --accent-light: #ccfbf1;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text-primary: #1e293b;
+    --text-muted: #64748b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* Header */
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 0.8rem 1.4rem;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    z-index: 10;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .header-btn {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    border-radius: 6px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: background 0.15s;
+  }
+  .header-btn:hover { background: rgba(255, 255, 255, 0.3); }
+
+  /* Collapsible Trip Planner Module */
+  .trip-planner {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1.2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    transition: all 0.2s ease-in-out;
+  }
+  .trip-planner-inner { max-width: 820px; margin: 0 auto; }
+  .trip-planner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+  .trip-planner-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .toggle-icon {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+  }
+  .trip-planner.collapsed .toggle-icon { transform: rotate(-90deg); }
+  .trip-planner.collapsed .planner-body { display: none; }
+
+  .trip-planner-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+  }
+  .input-field { display: flex; flex-direction: column; gap: 0.25rem; }
+  .input-field label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+  .input-field input {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .input-field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+  }
+
+  /* Preset destination chips */
+  .preset-chips {
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+    padding-top: 0.4rem;
+  }
+  .preset-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .chip {
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent-dark);
+  }
+
+  .plan-btn {
+    grid-column: 1 / -1;
+    margin-top: 0.2rem;
+    padding: 0.65rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .plan-btn:hover { background: var(--accent-dark); }
+  .plan-btn:active { transform: scale(0.99); }
+
+  /* Chat Logs */
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.2rem;
+    max-width: 820px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .msg {
+    margin: 0.8rem 0;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.25s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg.user { align-items: flex-end; }
+  .msg.agent { align-items: flex-start; }
+
+  .bubble {
+    display: inline-block;
+    padding: 0.75rem 1rem;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    text-align: left;
+    max-width: 92%;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .msg.user .bubble {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-bottom-right-radius: 2px;
+  }
+  .msg.agent .bubble {
+    border-bottom-left-radius: 2px;
+  }
+  .bubble.rich {
+    background: transparent;
+    border: none;
+    padding: 0;
+    max-width: 100%;
+    width: 100%;
+    white-space: normal;
+    box-shadow: none;
+  }
+
+  /* Human-readable formatted content styling */
+  .markdown-content {
+    white-space: normal;
+    word-break: break-word;
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-size: 0.95rem;
+  }
+  .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 {
+    color: #0f172a;
+    line-height: 1.3;
+  }
+  .markdown-content h1:first-child, .markdown-content h2:first-child, .markdown-content h3:first-child {
+    margin-top: 0.2rem;
+  }
+  .markdown-content h2 {
+    font-size: 1.25rem;
+    color: #0f766e;
+    background: #f0fdfa;
+    border-left: 4px solid var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0.8rem;
+    border-radius: 0 6px 6px 0;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .markdown-content h3 {
+    font-size: 1.05rem;
+    color: #1e293b;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.7rem;
+    margin-top: 1.1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  .markdown-content p {
+    margin: 0.55rem 0;
+  }
+  .markdown-content strong {
+    color: #0f172a;
+    font-weight: 700;
+  }
+  .markdown-content ul, .markdown-content ol {
+    margin: 0.6rem 0 1rem 1.4rem;
+    padding-left: 0;
+  }
+  .markdown-content li {
+    margin: 0.55rem 0;
+    line-height: 1.6;
+  }
+  .markdown-content li > ul {
+    margin: 0.35rem 0 0.45rem 1.2rem;
+  }
+  .markdown-content li > ul > li {
+    margin: 0.25rem 0;
+  }
+  .markdown-content hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.2rem 0;
+  }
+  .markdown-content code {
+    background: #f1f5f9;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.88rem;
+    font-family: monospace;
+    color: #0f766e;
+  }
+  .markdown-content blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 0.7rem 0;
+    padding-left: 0.85rem;
+    color: #475569;
+    font-style: italic;
+  }
+
+  /* Animated Thinking Dots */
+  .thinking-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.3rem 0.2rem;
+  }
+  .thinking-dot {
+    width: 7px;
+    height: 7px;
+    background-color: var(--accent);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+  }
+  .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+  .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+  .thinking-dot:nth-child(3) { animation-delay: 0s; }
+
+  @keyframes bounce {
+    0%, 80%, 100% {
+      transform: scale(0);
+      opacity: 0.4;
+    }
+    40% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Quick action bar on replies */
+  .reply-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+  }
+  .action-chip {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: all 0.15s;
+  }
+  .action-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Bottom Input Form */
+  form#form {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.85rem 1.2rem;
+    border-top: 1px solid var(--border);
+    background: #fff;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.02);
+  }
+  #form input {
+    flex: 1;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  #form input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15);
+  }
+  #form button {
+    padding: 0.75rem 1.3rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.15s;
+  }
+  #form button:hover { background: var(--accent-dark); }
+
+  /* --- A2UI component styles (Card, Column, Row, Text, Divider, List, Image, Icon) --- */
+  .a2card {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 1.1rem;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    max-width: 100%;
+    margin-top: 0.6rem;
+  }
+  .a2card + .a2card, .a2col > .a2card { margin-top: 0.6rem; }
+  .a2col { display: flex; flex-direction: column; gap: 0.45rem; }
+  .a2row { display: flex; flex-direction: row; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+  .a2row.between { justify-content: space-between; }
+  .a2text { margin: 0; line-height: 1.45; }
+  .a2text.a2-h1 { font-size: 1.4rem; font-weight: 700; color: #0f172a; }
+  .a2text.a2-h2 { font-size: 1.2rem; font-weight: 700; color: #1e293b; }
+  .a2text.a2-h3 { font-size: 1.05rem; font-weight: 600; color: #334155; }
+  .a2text.a2-h4 { font-size: 0.95rem; font-weight: 600; color: #475569; }
+  .a2text.a2-caption { font-size: 0.82rem; color: #64748b; }
+  .a2divider { border: none; border-top: 1px solid var(--border); margin: 0.45rem 0; width: 100%; }
+  .a2img {
+    max-width: 100%;
+    border-radius: 8px;
+    display: block;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .a2img:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-size: 1.25rem;
+    line-height: 1;
+    vertical-align: middle;
+    color: var(--accent);
+  }
+
+  /* Lightbox Modal for Full-Size Images */
+  #lightbox {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  #lightbox.active { display: flex; }
+  #lightbox img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-brand">
+    <span class="material-symbols-outlined" style="color:#fff; font-size:1.4rem;">travel_explore</span>
+    Travel Assistant
+  </div>
+  <div class="header-actions">
+    <button class="header-btn" id="new-trip-btn" title="Start a fresh trip search">
+      <span class="material-symbols-outlined" style="color:#fff; font-size:1rem;">refresh</span>
+      New Trip
+    </button>
+  </div>
+</header>
+
+<div class="trip-planner" id="planner-box">
+  <div class="trip-planner-inner">
+    <div class="trip-planner-header" id="planner-toggle">
+      <div class="trip-planner-title">
+        <span class="material-symbols-outlined" style="font-size:1.15rem;">flight_takeoff</span>
+        Trip Search & Itinerary Planner
+      </div>
+      <span class="material-symbols-outlined toggle-icon" id="toggle-icon">expand_more</span>
+    </div>
+    <div class="planner-body">
+      <form id="planner-form" class="trip-planner-grid">
+        <div class="input-field">
+          <label for="home-airport">Home Airport / City</label>
+          <input id="home-airport" type="text" placeholder="e.g. SFO or San Francisco" maxlength="30" required>
+        </div>
+        <div class="input-field">
+          <label for="dest-airport">Destination / City</label>
+          <input id="dest-airport" type="text" placeholder="e.g. HND or Tokyo" maxlength="30" required>
+        </div>
+        <div class="input-field">
+          <label for="dep-date">Departure Day</label>
+          <input id="dep-date" type="date" required>
+        </div>
+        <div class="input-field">
+          <label for="num-days">Number of Days</label>
+          <input id="num-days" type="number" min="1" max="60" placeholder="e.g. 7" required>
+        </div>
+        <button type="submit" class="plan-btn">
+          <span class="material-symbols-outlined" style="font-size:1.15rem; color:#fff;">search</span>
+          Find Flights & Plan Itinerary
+        </button>
+      </form>
+      <div class="preset-chips">
+        <span class="preset-label">Popular Trips:</span>
+        <span class="chip" data-dest="HND" data-days="7">🌸 Tokyo (7D)</span>
+        <span class="chip" data-dest="CDG" data-days="5">🥐 Paris (5D)</span>
+        <span class="chip" data-dest="LHR" data-days="6">🎡 London (6D)</span>
+        <span class="chip" data-dest="MAD" data-days="7">☀️ Madrid (7D)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="log"></div>
+
+<form id="form">
+  <input id="input" placeholder="Ask follow-up questions, adjust dates, or explore hotels…" autocomplete="off" autofocus>
+  <button>Send</button>
+</form>
+
+<!-- Full-screen image lightbox -->
+<div id="lightbox">
+  <img id="lightbox-img" src="" alt="Travel Preview">
+</div>
+
+<script>
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const plannerBox = document.getElementById("planner-box");
+const plannerToggle = document.getElementById("planner-toggle");
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightbox-img");
+
+// Collapse/Expand Planner Box
+plannerToggle.addEventListener("click", () => {
+  plannerBox.classList.toggle("collapsed");
+});
+
+// Lightbox click to close
+lightbox.addEventListener("click", () => {
+  lightbox.classList.remove("active");
+});
+
+// Set minimum date to tomorrow for the date picker
+const depDateInput = document.getElementById("dep-date");
+function setMinDepartureDate() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minStr = tomorrow.toISOString().split("T")[0];
+  depDateInput.setAttribute("min", minStr);
+  if (!depDateInput.value) {
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 30);
+    depDateInput.value = defaultDate.toISOString().split("T")[0];
+  }
+}
+setMinDepartureDate();
+
+// Preset Chips Quick-Fill
+document.querySelectorAll(".chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const dest = chip.getAttribute("data-dest");
+    const days = chip.getAttribute("data-days");
+    document.getElementById("dest-airport").value = dest;
+    document.getElementById("num-days").value = days;
+    if (!document.getElementById("home-airport").value) {
+      document.getElementById("home-airport").value = "SFO";
+    }
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    depDateInput.value = d.toISOString().split("T")[0];
+  });
+});
+
+// New Trip Reset Button
+document.getElementById("new-trip-btn").addEventListener("click", () => {
+  if (confirm("Start a new trip conversation?")) {
+    log.innerHTML = "";
+    plannerBox.classList.remove("collapsed");
+    input.focus();
+  }
+});
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function bubble(who) {
+  const m = el("div", "msg " + who);
+  const b = el("div", "bubble");
+  m.appendChild(b);
+  log.appendChild(m);
+  log.scrollTop = log.scrollHeight;
+  return b;
+}
+
+function showThinking(b) {
+  b.innerHTML = `
+    <div class="thinking-container">
+      <div class="thinking-dot"></div>
+      <div class="thinking-dot"></div>
+      <div class="thinking-dot"></div>
+    </div>
+  `;
+}
+
+/* ----------------------------------------------------------------------------
+ * A2UI mini-renderer (v0.8 Basic Catalog subset).
+ * -------------------------------------------------------------------------- */
+function boundStr(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v.literalString === "string") return v.literalString;
+  return "";
+}
+
+function childIds(c) {
+  const ids = [];
+  if (c.child) ids.push(c.child);
+  if (c.children && Array.isArray(c.children.explicitList)) ids.push(...c.children.explicitList);
+  return ids;
+}
+
+function buildNode(id, comps, visiting) {
+  if (!id || visiting.has(id)) return null;
+  visiting.add(id);
+  const spec = comps[id];
+  if (!spec) return null;
+  const kind = Object.keys(spec)[0];
+  const props = spec[kind] || {};
+  let node = null;
+
+  switch (kind) {
+    case "Card": {
+      node = el("div", "a2card");
+      const c = buildNode(props.child, comps, visiting);
+      if (c) node.appendChild(c);
+      break;
+    }
+    case "Column": {
+      node = el("div", "a2col");
+      for (const cid of childIds(props)) {
+        const c = buildNode(cid, comps, visiting);
+        if (c) node.appendChild(c);
+      }
+      break;
+    }
+    case "Row": {
+      const cls = "a2row" + (props.distribution === "spaceBetween" ? " between" : "");
+      node = el("div", "a2row " + cls);
+      for (const cid of childIds(props)) {
+        const c = buildNode(cid, comps, visiting);
+        if (c) node.appendChild(c);
+      }
+      break;
+    }
+    case "Text": {
+      const hint = props.usageHint ? " a2-" + props.usageHint : "";
+      node = el("p", "a2text" + hint, boundStr(props.text));
+      break;
+    }
+    case "Divider": {
+      node = el("hr", "a2divider");
+      break;
+    }
+    case "List": {
+      node = el("div", "a2col");
+      for (const cid of childIds(props)) {
+        const c = buildNode(cid, comps, visiting);
+        if (c) node.appendChild(c);
+      }
+      break;
+    }
+    case "Image": {
+      const url = boundStr(props.url);
+      if (/^https?:\/\//i.test(url)) {
+        node = el("img", "a2img");
+        node.src = url;
+        node.alt = boundStr(props.altText) || "Travel Image";
+        node.addEventListener("click", () => {
+          lightboxImg.src = url;
+          lightbox.classList.add("active");
+        });
+      } else {
+        node = el("p", "a2text a2-caption", "(Image: " + (url || "untitled") + ")");
+      }
+      break;
+    }
+    case "Icon": {
+      const name = boundStr(props.name);
+      node = el("span", "material-symbols-outlined", name);
+      break;
+    }
+    default:
+      node = el("p", "a2text", "[" + kind + "]");
+  }
+  visiting.delete(id);
+  return node;
+}
+
+function renderSurface(messages, container) {
+  const comps = {};
+  let rootIds = [];
+  for (const m of messages) {
+    if (m.beginRendering && m.beginRendering.root) rootIds.push(m.beginRendering.root);
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) {
+      for (const c of su.components) {
+        if (c && c.id && c.component) comps[c.id] = c.component;
+      }
+    }
+  }
+  if (rootIds.length === 0) {
+    const referenced = new Set();
+    for (const id in comps) {
+      const spec = comps[id];
+      childIds(spec[Object.keys(spec)[0]] || {}).forEach(c => referenced.add(c));
+    }
+    rootIds = Object.keys(comps).filter(id => !referenced.has(id));
+  }
+  let drew = false;
+  for (const rid of rootIds) {
+    const node = buildNode(rid, comps, new Set());
+    if (node) { container.appendChild(node); drew = true; }
+  }
+  return drew;
+}
+
+function flattenText(messages) {
+  const out = [];
+  for (const m of messages) {
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) {
+      for (const c of su.components) {
+        if (c && c.component && c.component.Text) out.push(boundStr(c.component.Text.text));
+      }
+    }
+  }
+  return out.join("\n").trim();
+}
+
+function renderReply(b, parts) {
+  b.textContent = "";
+  const texts = parts.filter(p => p && (p.kind === "text" || (!p.kind && p.text))).map(p => p.text || "");
+  const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
+
+  const textStr = texts.join("\n").trim();
+  if (textStr) {
+    const textWrapper = el("div", "markdown-content");
+    if (typeof marked !== "undefined" && marked.parse) {
+      textWrapper.innerHTML = marked.parse(textStr);
+    } else {
+      textWrapper.textContent = textStr;
+    }
+    b.appendChild(textWrapper);
+  }
+
+  if (a2ui.length) {
+    b.classList.add("rich");
+    if (!renderSurface(a2ui, b)) {
+      const fallback = flattenText(a2ui);
+      if (fallback) {
+        const fallbackWrapper = el("div", "markdown-content");
+        fallbackWrapper.innerHTML = (typeof marked !== "undefined" && marked.parse) ? marked.parse(fallback) : fallback;
+        b.appendChild(fallbackWrapper);
+      } else {
+        b.appendChild(el("div", null, "(no card content)"));
+      }
+    }
+  }
+  if (!b.childNodes.length) b.textContent = "(no response)";
+
+  // Add Copy to Clipboard chip under agent replies
+  const actions = el("div", "reply-actions");
+  const copyBtn = el("button", "action-chip");
+  copyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:0.9rem;">content_copy</span> Copy';
+  copyBtn.addEventListener("click", () => {
+    const content = textStr || b.innerText;
+    navigator.clipboard.writeText(content).then(() => {
+      copyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:0.9rem; color:green;">check</span> Copied!';
+      setTimeout(() => {
+        copyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:0.9rem;">content_copy</span> Copy';
+      }, 2000);
+    });
+  });
+  actions.appendChild(copyBtn);
+  b.parentElement.appendChild(actions);
+
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendMessage(text) {
+  if (!text) return;
+  bubble("user").textContent = text;
+  const b = bubble("agent");
+  showThinking(b);
+
+  // Auto-collapse planner to provide more screen real estate once searching
+  plannerBox.classList.add("collapsed");
+
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { throw new Error(`Server returned non-JSON (HTTP ${res.status}). ${raw.slice(0, 300)}`); }
+    renderReply(b, data.parts || []);
+  } catch (e) {
+    b.textContent = "Error: " + e.message;
+  }
+}
+
+// Plain chat bar submission
+form.addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  sendMessage(text);
+});
+
+// Structured trip planner submission
+const plannerForm = document.getElementById("planner-form");
+plannerForm.addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const home = document.getElementById("home-airport").value.trim();
+  const dest = document.getElementById("dest-airport").value.trim();
+  const depDate = document.getElementById("dep-date").value;
+  const days = document.getElementById("num-days").value;
+
+  // Validate departure date is in the future
+  if (!depDate) {
+    alert("Please select a departure date.");
+    document.getElementById("dep-date").focus();
+    return;
+  }
+
+  const selectedDate = new Date(depDate + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (selectedDate <= today) {
+    alert("Departure date must be in the future (tomorrow or later).");
+    document.getElementById("dep-date").focus();
+    return;
+  }
+
+  const prompt = `Please check flight options and plan an itinerary:
+- Home airport or city: ${home}
+- Destination airport or city: ${dest}
+- Departure day: ${depDate}
+- Number of days: ${days} days
+
+Please search for departing and return flight options (business flights first, then economy), calculate award redemption value and cash backup, and generate a ${days}-day destination itinerary with airport transfer, hotel options (mid-tier and luxury), and local dining.`;
+
+  sendMessage(prompt);
+});
+</script>
+</body>
+</html>
