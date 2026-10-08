@@ -7,8 +7,13 @@
 <!-- Optional: used only to draw A2UI Icon components. If it can't load (offline/
      corp network), icons fall back to showing their name as text. -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
-<!-- Markdown Parser for rich readable text output -->
-<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+<!-- Markdown Parser for rich readable text output (local with CDN fallback) -->
+<script src="/static/marked.min.js"></script>
+<script>
+  if (typeof marked === "undefined") {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"><\/script>');
+  }
+</script>
 <style>
   :root {
     --accent: #0d9488;
@@ -278,16 +283,28 @@
     color: #0f172a;
     font-weight: 700;
   }
-  .markdown-content ul, .markdown-content ol {
+  .markdown-content ul {
     margin: 0.6rem 0 1rem 1.4rem;
-    padding-left: 0;
+    padding-left: 0.5rem;
+    list-style-type: disc !important;
+  }
+  .markdown-content ol {
+    margin: 0.6rem 0 1rem 1.4rem;
+    padding-left: 0.5rem;
+    list-style-type: decimal !important;
   }
   .markdown-content li {
-    margin: 0.55rem 0;
+    display: list-item !important;
+    line-height: 1.6;
+    margin: 0.4rem 0;
+  }
+  .markdown-content > ul > li, .markdown-content > ol > li {
+    margin: 0.95rem 0;
     line-height: 1.6;
   }
   .markdown-content li > ul {
-    margin: 0.35rem 0 0.45rem 1.2rem;
+    margin: 0.35rem 0 0.55rem 1.2rem;
+    list-style-type: circle !important;
   }
   .markdown-content li > ul > li {
     margin: 0.25rem 0;
@@ -311,6 +328,24 @@
     padding-left: 0.85rem;
     color: #475569;
     font-style: italic;
+  }
+  .markdown-content img {
+    max-width: 240px;
+    max-height: 160px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    margin: 0.4rem 0 0.6rem 0;
+    display: inline-block;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    object-fit: cover;
+  }
+  .markdown-content img:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
   }
 
   /* Animated Thinking Dots */
@@ -765,6 +800,13 @@ function renderReply(b, parts) {
     } else {
       textWrapper.textContent = textStr;
     }
+    // Attach click listeners to all rendered preview images for the full-screen lightbox
+    textWrapper.querySelectorAll("img").forEach(img => {
+      img.addEventListener("click", () => {
+        lightboxImg.src = img.src;
+        lightbox.classList.add("active");
+      });
+    });
     b.appendChild(textWrapper);
   }
 
@@ -775,6 +817,12 @@ function renderReply(b, parts) {
       if (fallback) {
         const fallbackWrapper = el("div", "markdown-content");
         fallbackWrapper.innerHTML = (typeof marked !== "undefined" && marked.parse) ? marked.parse(fallback) : fallback;
+        fallbackWrapper.querySelectorAll("img").forEach(img => {
+          img.addEventListener("click", () => {
+            lightboxImg.src = img.src;
+            lightbox.classList.add("active");
+          });
+        });
         b.appendChild(fallbackWrapper);
       } else {
         b.appendChild(el("div", null, "(no card content)"));
