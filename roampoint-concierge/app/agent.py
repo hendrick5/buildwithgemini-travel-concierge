@@ -59,6 +59,8 @@ def search_flight_deals(
 
     Returns:
         A list of matching flight deals with points cost, cash copay, airline program, and CPP valuation.
+        If the catalog returns fewer deals than requested, use your airline and award routing knowledge
+        to provide up to 5 flight options for departing and up to 5 for return.
     """
     collection_ref = db.collection("flight_deals")
     docs = collection_ref.stream()
@@ -589,20 +591,27 @@ async def generate_destination_image(
     unique_id = uuid.uuid4().hex[:8]
     filename = f"destination-{unique_id}.{file_extension}"
 
-    # (1) Save artifact for Playground Artifacts panel
-    artifact_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
-    artifact_version = await tool_context.save_artifact(
-        filename=filename,
-        artifact=artifact_part,
-        custom_metadata={"prompt": prompt, "model": "gemini-3.1-flash-lite-image"},
-    )
+    # (1) Save artifact for Playground Artifacts panel (if artifact service is available)
+    artifact_version = 0
+    try:
+        if tool_context:
+            artifact_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+            artifact_version = await tool_context.save_artifact(
+                filename=filename,
+                artifact=artifact_part,
+                custom_metadata={"prompt": prompt, "model": "gemini-3.1-flash-lite-image"},
+            )
+    except Exception as e:
+        print(f"Warning: could not save artifact to context: {e}")
 
     # (2) Upload image bytes to public Cloud Storage bucket
-    bucket = storage_client.bucket(STORAGE_BUCKET_NAME)
-    blob = bucket.blob(filename)
-    blob.upload_from_string(image_bytes, content_type=mime_type)
-
     public_url = f"https://storage.googleapis.com/{STORAGE_BUCKET_NAME}/{filename}"
+    try:
+        bucket = storage_client.bucket(STORAGE_BUCKET_NAME)
+        blob = bucket.blob(filename)
+        blob.upload_from_string(image_bytes, content_type=mime_type)
+    except Exception as e:
+        print(f"Warning: could not upload image to Cloud Storage: {e}")
 
     return {
         "status": "success",

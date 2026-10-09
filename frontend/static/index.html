@@ -309,6 +309,17 @@
   .markdown-content li > ul > li {
     margin: 0.25rem 0;
   }
+  .markdown-content li > ul > li > ul {
+    margin: 0.25rem 0 0.45rem 1.2rem;
+    list-style-type: square !important;
+  }
+  .markdown-content li > ul > li > ul > li {
+    margin: 0.2rem 0;
+  }
+  .markdown-content li > ul > li > ul > li > ul {
+    margin: 0.2rem 0 0.35rem 1.2rem;
+    list-style-type: disc !important;
+  }
   .markdown-content hr {
     border: none;
     border-top: 1px solid var(--border);
@@ -916,7 +927,14 @@ plannerForm.addEventListener("submit", (ev) => {
 - Departure day: ${depDate}
 - Number of days: ${days} days
 
-Please search for departing and return flight options (business flights first, then economy), calculate award redemption value and cash backup, and generate a ${days}-day destination itinerary with airport transfer, hotel options (mid-tier and luxury), and local dining.`;
+Please provide up to 5 departing flight options and up to 5 return flight options (business flights first, then economy), calculate award redemption value and cash backup, provide airport transfer options, provide up to 5 hotel options (spanning mid-tier and luxury), and generate a ${days}-day destination itinerary with airport transfers and local dining recommendations.
+
+Please make sure to format the output with the 4 distinct sections:
+1. ## Business Class (up to 5 departing and up to 5 return flights)
+2. ## Economy & Cash Backup (up to 5 departing and up to 5 return flights)
+3. ## Transfer and Hotels (airport transfers and up to 5 hotel options)
+4. ## Daily Itinerary (daily schedule, multiple dining options with general costs, must-try food dishes)
+Ensure all sub-points beneath major sections are formatted as bullet points. Do not omit return flights, hotels, airport transfers, or food recommendations.`;
 
   sendMessage(prompt);
 });

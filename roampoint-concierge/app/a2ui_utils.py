@@ -217,43 +217,68 @@ def _surface_is_renderable(messages: list[dict]) -> bool:
     return True
 
 
+def _extract_prose_outside_a2ui(text: str) -> str:
+    """Extract non-A2UI text/markdown from a string that may contain A2UI blocks."""
+    cleaned = _TAG_RE.sub("", text)
+    # Strip markdown code blocks that contain JSON A2UI arrays
+    cleaned = re.sub(r"```(?:json)?\s*\[\s*\{.*?\}\s*\]\s*```", "", cleaned, flags=re.DOTALL)
+    cleaned = cleaned.strip()
+    # If what remains starts with [ and ends with ], it was raw JSON without markdown
+    if cleaned.startswith("[") and cleaned.endswith("]"):
+        return ""
+    return cleaned
+
+
 def a2ui_callback(
     callback_context: CallbackContext,
     llm_response: LlmResponse,
 ) -> LlmResponse | None:
-    """Convert A2UI JSON in text output to rendered components (or a clean fallback)."""
+    """Convert A2UI JSON in text output to rendered components, preserving all prose text."""
     if not llm_response.content or not llm_response.content.parts:
         return None
+
+    new_parts = []
+    found_a2ui = False
 
     for part in llm_response.content.parts:
         text = (part.text or "").strip()
         if not text:
+            new_parts.append(part)
             continue
-        # Cheap gate: only touch parts that look like A2UI, leave prose alone.
+
+        # If this part has no A2UI keys, preserve it as-is
         if not any(k in text for k in _A2UI_KEYS):
+            new_parts.append(part)
             continue
 
         messages = _extract_a2ui_messages(text)
         if not messages:
+            new_parts.append(part)
             continue
+
+        # Extract and preserve any prose text outside of the A2UI JSON
+        prose = _extract_prose_outside_a2ui(text)
+        if prose:
+            new_parts.append(types.Part(text=prose))
 
         # Turn un-fetchable <Image> URLs into a text note (no broken-image icons).
         _sanitize_image_components(messages)
 
         if not _surface_is_renderable(messages):
-            # We recognized A2UI but couldn't recover a renderable surface — the
-            # model emitted invalid JSON, a missing surface body, or an undefined
-            # root/child reference. Return clean text instead of a blank card.
-            return LlmResponse(
-                content=types.Content(
-                    role="model", parts=[types.Part(text=_FALLBACK_TEXT)]
-                )
-            )
+            # If the surface wasn't renderable and there's no prose, show fallback
+            if not prose:
+                new_parts.append(types.Part(text=_FALLBACK_TEXT))
+            continue
 
-        new_parts = [_wrap_a2ui_part(m) for m in messages]
+        for m in messages:
+            new_parts.append(_wrap_a2ui_part(m))
+        found_a2ui = True
+
+    if found_a2ui:
         return LlmResponse(
             content=types.Content(role="model", parts=new_parts),
             custom_metadata={"a2a:response": "true"},
         )
 
     return None
+
